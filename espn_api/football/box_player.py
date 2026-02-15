@@ -17,8 +17,22 @@ class BoxPlayer(Player):
             self.slot_position = POSITION_MAP[data['lineupSlotId']]
 
         player = data['playerPoolEntry']['player'] if 'playerPoolEntry' in data else data['player']
-        if player['proTeamId'] in pro_schedule:
-            (opp_id, date) = pro_schedule[player['proTeamId']]
+
+        # Try top-level proTeamId first, but fall back to the actual stats
+        # entry for this week — ESPN keeps the correct team per scoring period
+        # even when the top-level proTeamId is stale (player changed teams)
+        pro_team_id = player['proTeamId']
+        if pro_team_id not in pro_schedule or pro_team_id == 0:
+            for stat in player.get('stats', []):
+                if (stat.get('scoringPeriodId') == week
+                        and stat.get('statSourceId') == 0
+                        and stat.get('proTeamId', 0) != 0):
+                    pro_team_id = stat['proTeamId']
+                    self.proTeam = PRO_TEAM_MAP.get(pro_team_id, self.proTeam)
+                    break
+
+        if pro_team_id in pro_schedule:
+            (opp_id, date) = pro_schedule[pro_team_id]
             self.game_date = datetime.fromtimestamp(date/1000.0)
             self.game_played = 100 if datetime.now() > self.game_date + timedelta(hours=3) else 0
             posId = str(player['defaultPositionId'])
@@ -26,13 +40,7 @@ class BoxPlayer(Player):
                 self.pro_opponent = PRO_TEAM_MAP[opp_id]
                 self.pro_pos_rank = positional_rankings[posId][str(opp_id)] if str(opp_id) in positional_rankings[posId] else 0
         else: # bye week
-            # Check if player actually scored — if so, proTeamId is stale
-            # (e.g. player changed teams) and they're not really on bye
-            week_stats = self.stats.get(week, {})
-            if week_stats.get('points', 0) > 0:
-                self.on_bye_week = False
-            else:
-                self.on_bye_week = True
+            self.on_bye_week = True
 
         stats = self.stats.get(week, {})
         self.points = stats.get('points', 0)
