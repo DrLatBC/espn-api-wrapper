@@ -28,7 +28,7 @@ class BoxScore(object):
     
     def _get_team_data(self, team, data, pro_schedule, positional_rankings, week, year):
       if team not in data:
-        return (0, 0, -1, [])
+        return (None, 0, -1, [])
 
       team_id = data[team]['teamId']
       team_projected = -1

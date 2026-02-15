@@ -85,11 +85,12 @@ class League(BaseLeague):
         self.nfl_week = data['status']['latestScoringPeriod']
         self._fetch_teams(data)
 
-    def refresh_draft(self, refresh_players=False, refresh__teams=False):
+    def refresh_draft(self, refresh_players=False, refresh_teams=False):
         super()._fetch_draft()
         if refresh_players:
             self._fetch_players()
-        if refresh__teams:
+        if refresh_teams:
+            data = super()._fetch_league(SettingsClass=Settings)
             self._fetch_teams(data)
 
     def load_roster_week(self, week: int) -> None:
@@ -149,7 +150,7 @@ class League(BaseLeague):
                 ),
                 "points_for": sum(team.scores[:week]),
                 "points_against": sum(
-                    [team.schedule[w].scores[w] for w in range(week)]
+                    [team.schedule[w].scores[w] for w in range(week) if team.schedule[w] != team]
                 ),
                 "schedule": team.schedule[:week],
                 "outcomes": team.outcomes[:week],

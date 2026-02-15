@@ -27,6 +27,8 @@ class Activity(object):
                         break
             if not player:
                 player = player_info(playerId=msg['targetId'])
+            if not player:
+                player = msg.get('targetId', 'Unknown')
             self.actions.append((team, action, player, bid_amount))
 
     def __repr__(self):
