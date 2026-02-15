@@ -26,7 +26,13 @@ class BoxPlayer(Player):
                 self.pro_opponent = PRO_TEAM_MAP[opp_id]
                 self.pro_pos_rank = positional_rankings[posId][str(opp_id)] if str(opp_id) in positional_rankings[posId] else 0
         else: # bye week
-            self.on_bye_week = True
+            # Check if player actually scored — if so, proTeamId is stale
+            # (e.g. player changed teams) and they're not really on bye
+            week_stats = self.stats.get(week, {})
+            if week_stats.get('points', 0) > 0:
+                self.on_bye_week = False
+            else:
+                self.on_bye_week = True
 
         stats = self.stats.get(week, {})
         self.points = stats.get('points', 0)
