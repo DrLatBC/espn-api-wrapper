@@ -18,18 +18,17 @@ class BoxPlayer(Player):
 
         player = data['playerPoolEntry']['player'] if 'playerPoolEntry' in data else data['player']
 
-        # Try top-level proTeamId first, but fall back to the actual stats
-        # entry for this week — ESPN keeps the correct team per scoring period
-        # even when the top-level proTeamId is stale (player changed teams)
+        # ESPN's top-level proTeamId is the player's CURRENT team, not their
+        # team at time of the game. Always prefer the per-week proTeamId from
+        # the actual stats entry, which has the correct team per scoring period.
         pro_team_id = player['proTeamId']
-        if pro_team_id not in pro_schedule or pro_team_id == 0:
-            for stat in player.get('stats', []):
-                if (stat.get('scoringPeriodId') == week
-                        and stat.get('statSourceId') == 0
-                        and stat.get('proTeamId', 0) != 0):
-                    pro_team_id = stat['proTeamId']
-                    self.proTeam = PRO_TEAM_MAP.get(pro_team_id, self.proTeam)
-                    break
+        for stat in player.get('stats', []):
+            if (stat.get('scoringPeriodId') == week
+                    and stat.get('statSourceId') == 0
+                    and stat.get('proTeamId', 0) != 0):
+                pro_team_id = stat['proTeamId']
+                self.proTeam = PRO_TEAM_MAP.get(pro_team_id, self.proTeam)
+                break
 
         if pro_team_id in pro_schedule:
             (opp_id, date) = pro_schedule[pro_team_id]
