@@ -293,9 +293,14 @@ class League(BaseLeague):
 
         return matchups
 
-    def box_scores(self, week: int = None) -> List[BoxScore]:
+    def box_scores(self, week: int = None, player_team_cache: dict = None) -> List[BoxScore]:
         '''Returns list of box score for a given week\n
-        Should only be used with most recent season'''
+        Should only be used with most recent season\n
+        player_team_cache: optional dict mapping playerId -> proTeamId,
+        used to resolve the correct team for players on bye weeks
+        (especially mid-season trades). Mutated in place as new data
+        is encountered, so callers iterating over multiple weeks should
+        pass the same dict each time.'''
         if self.year < 2019:
             raise Exception('Cant use box score before 2019')
         matchup_period = self.currentMatchupPeriod
@@ -319,7 +324,7 @@ class League(BaseLeague):
         schedule = data['schedule']
         pro_schedule = self._get_pro_schedule(scoring_period)
         positional_rankings = self._get_positional_ratings(scoring_period)
-        box_data = [BoxScore(matchup, pro_schedule, positional_rankings, scoring_period, self.year) for matchup in schedule]
+        box_data = [BoxScore(matchup, pro_schedule, positional_rankings, scoring_period, self.year, player_team_cache) for matchup in schedule]
 
         for team in self.teams:
             for matchup in box_data:
